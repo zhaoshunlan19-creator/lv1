@@ -1,6 +1,19 @@
 # 依赖
 node_modules
 
+# Next.js 构建输出
+.next/
+out/
+dist/
+
+# 日志
+*.log
+npm-debug.log*
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
 # claudecode本地配置
 .claude/settings.local.json
 
