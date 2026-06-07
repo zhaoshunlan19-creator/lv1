@@ -2,6 +2,21 @@
 // IdeaForge 类型定义
 // ============================================
 
+export interface IdeaSource {
+  type: 'douyin' | 'manual'
+  videoId?: string
+  shareUrl?: string
+  videoTitle?: string
+  coverImage?: string
+  authorName?: string
+  stats?: {
+    playCount: number
+    likeCount: number
+    commentCount: number
+    shareCount: number
+  }
+}
+
 export interface AnalysisResult {
   painPoints: string
   targetUsers: string
@@ -29,4 +44,5 @@ export interface Idea {
   updatedAt: number
   analysis?: AnalysisResult
   mvpPlan?: MVPPlan
+  source?: IdeaSource
 }

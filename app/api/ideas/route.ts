@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { title, description, targetUser } = body
+    const { title, description, targetUser, source } = body
 
     if (!title?.trim() || !description?.trim() || !targetUser?.trim()) {
       return NextResponse.json(
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      ...(source ? { source } : {}),
     }
 
     await saveIdea(idea)

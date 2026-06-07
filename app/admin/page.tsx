@@ -14,11 +14,13 @@ import {
   LayoutGrid,
   Plus,
   Lightbulb,
+  Music2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EditIdeaDialog } from '@/components/edit-idea-dialog'
 import { CreateIdeaDialog } from '@/components/create-idea-dialog'
+import { DouyinImportDialog } from '@/components/douyin-import-dialog'
 import type { Idea, IdeaStatus } from '@/lib/types'
 
 function StatusBadge({ status }: { status: IdeaStatus }) {
@@ -49,6 +51,7 @@ export default function AdminPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [reAnalyzingId, setReAnalyzingId] = useState<string | null>(null)
+  const [douyinOpen, setDouyinOpen] = useState(false)
 
   const fetchIdeas = async () => {
     try {
@@ -174,6 +177,10 @@ export default function AdminPage() {
                 <LayoutGrid className="h-4 w-4" />
                 卡片视图
               </Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setDouyinOpen(true)} className="gap-1.5">
+              <Music2 className="h-4 w-4" />
+              从抖音导入
             </Button>
             <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
               <Plus className="h-4 w-4" />
@@ -347,6 +354,13 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Douyin Import Dialog */}
+      <DouyinImportDialog
+        open={douyinOpen}
+        onOpenChange={setDouyinOpen}
+        onCreated={fetchIdeas}
+      />
 
       {/* Create Dialog */}
       <CreateIdeaDialog

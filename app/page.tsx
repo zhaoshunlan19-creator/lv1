@@ -74,7 +74,10 @@ export default function Home() {
         {ideas.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">创意广场</h2>
+              <div>
+                <h2 className="text-xl font-semibold">创意广场</h2>
+                <p className="text-sm text-muted-foreground">每个创意都有 AI 生成的产品规划</p>
+              </div>
               <span className="text-sm text-muted-foreground">
                 共 {ideas.length} 个创意
               </span>

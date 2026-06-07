@@ -12,6 +12,11 @@ import {
   Loader2,
   Trash2,
   RefreshCw,
+  Music2,
+  PlayCircle,
+  Heart,
+  MessageCircle,
+  Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AnalysisSection } from '@/components/analysis-section'
@@ -211,6 +216,63 @@ export default function IdeaDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Douyin Source */}
+          {idea.source?.type === 'douyin' && (
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Music2 className="h-4 w-4 text-primary" />
+                <h3 className="font-medium text-sm">创意来源 · 抖音视频</h3>
+              </div>
+              <div className="flex gap-3">
+                {idea.source.coverImage && (
+                  <img
+                    src={idea.source.coverImage}
+                    alt="视频封面"
+                    className="w-16 h-20 object-cover rounded-lg shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  {idea.source.authorName && (
+                    <p className="text-xs text-muted-foreground">@{idea.source.authorName}</p>
+                  )}
+                  <p className="text-sm leading-relaxed line-clamp-3">
+                    {idea.source.videoTitle}
+                  </p>
+                  {idea.source.stats && (
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <PlayCircle className="h-3 w-3" />
+                        {idea.source.stats.playCount.toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Heart className="h-3 w-3" />
+                        {idea.source.stats.likeCount.toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MessageCircle className="h-3 w-3" />
+                        {idea.source.stats.commentCount.toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Share2 className="h-3 w-3" />
+                        {idea.source.stats.shareCount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {idea.source.shareUrl && (
+                    <a
+                      href={idea.source.shareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs text-primary hover:underline pt-1"
+                    >
+                      查看原视频 →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* AI Analysis */}
