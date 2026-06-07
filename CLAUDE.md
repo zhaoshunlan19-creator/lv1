@@ -20,7 +20,7 @@
 
 ```
 app/
-  page.tsx                    # 首页 - 创意广场（卡片列表）
+  page.tsx                    # 首页 - 聚焦模式（默认）+ 网格瀑布流模式切换，浏览历史 Sheet 在聚焦模式底部
   admin/page.tsx              # 管理后台（CRUD + 抖音导入）
   idea/[id]/page.tsx          # 创意详情页（含来源区块）
   api/ideas/                  # 创意 CRUD API
@@ -28,7 +28,8 @@ app/
   api/douyin/extract/         # 抖音分享链接解析（JustOneAPI）
   api/douyin/draft/           # AI 生成创意草稿（AITOLL）
 components/
-  idea-card.tsx               # 创意卡片（彩色渐变顶部 + emoji）
+  idea-card.tsx               # 创意卡片（竖屏比例，aspect-[3/4] 展示区预留图片，瀑布流布局）
+  idea-card-focus.tsx         # 聚焦大卡（标题→渐变展示区→描述+查看详情）
   create-idea-dialog.tsx      # 手动创建创意弹窗
   edit-idea-dialog.tsx        # 编辑创意弹窗
   douyin-import-dialog.tsx    # 抖音导入弹窗（三阶段流程）

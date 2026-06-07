@@ -26,33 +26,20 @@ export function IdeaCard({ idea }: IdeaCardProps) {
   const idx = getIndex(idea.title)
   const gradient = GRADIENTS[idx]
   const emoji = EMOJIS[idx]
-  const dateStr = new Date(idea.createdAt).toLocaleDateString('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-  })
 
   return (
-    <Link href={`/idea/${idea.id}`}>
+    <Link href={`/idea/${idea.id}`} className="block mb-4 break-inside-avoid">
       <div className="group rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md hover:border-primary/20">
-        <div className={`bg-gradient-to-br ${gradient} h-20 flex items-center justify-center`}>
-          <span className="text-3xl">{emoji}</span>
+        <div className={`bg-gradient-to-br ${gradient} aspect-[3/4] flex items-center justify-center`}>
+          <span className="text-5xl">{emoji}</span>
         </div>
-        <div className="p-4 space-y-2">
-          <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
+        <div className="p-4 space-y-1.5">
+          <h3 className="font-semibold text-base group-hover:text-primary transition-colors leading-snug">
             {idea.title}
           </h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {idea.description}
           </p>
-          {idea.targetUser && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <span>👤</span>
-              <span className="truncate">{idea.targetUser}</span>
-            </p>
-          )}
-          <div className="pt-1 text-right">
-            <span className="text-xs text-muted-foreground">{dateStr}</span>
-          </div>
         </div>
       </div>
     </Link>
