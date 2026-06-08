@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApiKey } from '@/lib/settings'
 
 const JUSTONEAPI_BASE = 'https://api.justoneapi.com'
 
@@ -19,10 +20,10 @@ export async function POST(req: NextRequest) {
   }
   const shareUrl = urlMatch[0].replace(/[^\w\-._~:/?#[\]@!$&'()*+,;=%]+$/, '')
 
-  const token = process.env.JUSTONEAPI_TOKEN
+  const token = await getApiKey('JUSTONEAPI_TOKEN')
   if (!token) {
     return NextResponse.json(
-      { error: 'JUSTONEAPI_TOKEN 未配置，请在 .env.local 中添加' },
+      { error: 'JUSTONEAPI_TOKEN 未配置，请在设置页或 .env.local 中添加' },
       { status: 500 },
     )
   }

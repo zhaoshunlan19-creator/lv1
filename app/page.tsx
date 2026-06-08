@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { Sparkles, ListFilter, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight } from 'lucide-react'
+import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { IdeaCard } from '@/components/idea-card'
 import { IdeaCardFocus } from '@/components/idea-card-focus'
 import type { Idea } from '@/lib/types'
+
 
 const GRADIENTS = [
   'from-indigo-400 to-purple-500',
@@ -98,12 +98,6 @@ export default function Home() {
                 {viewMode === 'focus' ? <LayoutGrid className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
             )}
-            <Button variant="outline" size="sm" asChild className="gap-1.5 ml-1">
-              <Link href="/admin">
-                <ListFilter className="h-4 w-4" />
-                管理后台
-              </Link>
-            </Button>
           </div>
         </div>
       </header>
