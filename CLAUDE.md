@@ -31,10 +31,9 @@ app/
 components/
   idea-card.tsx               # 创意卡片（瀑布流）
   idea-card-focus.tsx         # 聚焦大卡
-  create-idea-dialog.tsx      # 新建创意弹窗（含手动录入 / 抖音导入两个 Tab）
-  edit-idea-dialog.tsx        # 编辑创意弹窗
+  idea-sheet.tsx              # 创意文档 Sheet（新建/编辑统一入口，Notion 风格内联编辑）
   source-badge.tsx            # 来源徽章（从 SOURCE_REGISTRY 读取，新增来源只改注册表）
-  analysis-section.tsx        # AI 分析结果展示
+  analysis-section.tsx        # 需求分析展示
   mvp-section.tsx             # MVP 方案展示
 lib/
   types.ts                    # 类型定义（含 IdeaSource、SOURCE_REGISTRY）
@@ -67,11 +66,11 @@ JUSTONEAPI_TOKEN=...        # 抖音数据提取（也可在 /admin/settings 配
 
 ## 抖音导入流程
 
-1. 管理员在新建创意弹窗切换到"从抖音导入" Tab，粘贴分享文字/链接
+1. 管理员在创意文档 Sheet 的"从抖音导入"Popover 中粘贴分享文字/链接
 2. `分享链接解析 V1` → 提取 videoId
 3. `视频详情 V2` → 获取文案、封面、播放量等
-4. AI 生成创意草稿（title / description / targetUser）
-5. 管理员预览编辑后确认 → 创建并触发 AI 深度分析
+4. AI 生成创意草稿（title / description / targetUser）预填到文档字段
+5. 管理员编辑确认后提交 → 创建并触发深度分析
 
 ## 常用命令
 

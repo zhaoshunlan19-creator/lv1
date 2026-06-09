@@ -12,8 +12,7 @@ import {
   Lightbulb,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { EditIdeaDialog } from '@/components/edit-idea-dialog'
-import { CreateIdeaDialog } from '@/components/create-idea-dialog'
+import { IdeaSheet } from '@/components/idea-sheet'
 import { SourceBadge } from '@/components/source-badge'
 import type { Idea, IdeaStatus } from '@/lib/types'
 
@@ -38,9 +37,11 @@ function StatusBadge({ status }: { status: IdeaStatus }) {
 export default function AdminPage() {
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(true)
-  const [editIdea, setEditIdea] = useState<Idea | null>(null)
-  const [editOpen, setEditOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [sheet, setSheet] = useState<
+    | { open: false }
+    | { open: true; mode: 'create' }
+    | { open: true; mode: 'edit'; idea: Idea }
+  >({ open: false })
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [reAnalyzingId, setReAnalyzingId] = useState<string | null>(null)
 
@@ -120,17 +121,12 @@ export default function AdminPage() {
     }
   }
 
-  const openEdit = (idea: Idea) => {
-    setEditIdea(idea)
-    setEditOpen(true)
-  }
-
   return (
     <main className="p-6 space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">创意管理</h1>
-        <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+        <Button size="sm" onClick={() => setSheet({ open: true, mode: 'create' })} className="gap-1.5">
           <Plus className="h-4 w-4" />
           新建创意
         </Button>
@@ -145,7 +141,7 @@ export default function AdminPage() {
           <div className="text-center py-20 space-y-4">
             <Lightbulb className="h-12 w-12 mx-auto text-muted-foreground/50" />
             <p className="text-muted-foreground">还没有录入任何创意</p>
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button onClick={() => setSheet({ open: true, mode: 'create' })}>
               <Plus className="h-4 w-4 mr-1" />
               录入第一个创意
             </Button>
@@ -206,7 +202,7 @@ export default function AdminPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => openEdit(idea)}
+                            onClick={() => setSheet({ open: true, mode: 'edit', idea })}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -249,19 +245,13 @@ export default function AdminPage() {
           </div>
         )}
 
-      {/* Create Dialog */}
-      <CreateIdeaDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={fetchIdeas}
-      />
-
-      {/* Edit Dialog */}
-      <EditIdeaDialog
-        idea={editIdea}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onUpdated={fetchIdeas}
+      {/* Idea Sheet */}
+      <IdeaSheet
+        mode={sheet.open ? sheet.mode : 'create'}
+        open={sheet.open}
+        onOpenChange={(v) => { if (!v) setSheet({ open: false }) }}
+        idea={sheet.open && sheet.mode === 'edit' ? sheet.idea : undefined}
+        onSuccess={fetchIdeas}
       />
     </main>
   )
