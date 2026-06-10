@@ -66,7 +66,6 @@ export interface ChatResponse {
 
 // AITOLL 配置
 const API_BASE_URL = 'https://aitoll.net/api/gateway/api/chat/completions'
-const API_KEY_ENV = 'AITOLL_API_KEY'
 
 // 默认模型（可根据供应商修改）
 const DEFAULT_MODELS = {
@@ -89,10 +88,12 @@ async function callAPI(request: {
   temperature?: number
   max_tokens?: number
 }): Promise<any> {
-  const apiKey = process.env[API_KEY_ENV]
+  // 动态 import 避免在客户端 bundle 中引入 fs
+  const { getApiKey } = await import('./settings')
+  const apiKey = await getApiKey('AITOLL_API_KEY')
 
   if (!apiKey) {
-    throw new Error(`${API_KEY_ENV} 未配置，请在 .env.local 中添加`)
+    throw new Error('AITOLL_API_KEY 未配置，请在设置页或 .env.local 中添加')
   }
 
   const response = await fetch(API_BASE_URL, {
@@ -194,8 +195,9 @@ export async function chatWithUsage(
 }
 
 /**
- * 检查 API Key 是否已配置
+ * 检查 API Key 是否已配置（优先 settings，回退 env）
  */
-export function isConfigured(): boolean {
-  return !!process.env[API_KEY_ENV]
+export async function isConfigured(): Promise<boolean> {
+  const { getApiKey } = await import('./settings')
+  return !!(await getApiKey('AITOLL_API_KEY'))
 }
