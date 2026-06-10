@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Lightbulb, Settings, ArrowLeft } from 'lucide-react'
+import { Sparkles, Lightbulb, Settings, ArrowLeft, Users } from 'lucide-react'
+import { UserNav } from '@/components/auth/user-nav'
 
 const NAV_ITEMS = [
   {
@@ -11,6 +12,12 @@ const NAV_ITEMS = [
     icon: Lightbulb,
     // exact match，避免 /admin/settings 也高亮
     exact: true,
+  },
+  {
+    label: '用户管理',
+    href: '/admin/users',
+    icon: Users,
+    exact: false,
   },
   {
     label: '设置',
@@ -59,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Footer */}
-        <div className="px-2 py-3 border-t">
+        <div className="px-2 py-3 border-t space-y-1">
           <Link
             href="/"
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -67,6 +74,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <ArrowLeft className="h-4 w-4 shrink-0" />
             返回首页
           </Link>
+          <div className="px-1 pt-1 border-t">
+            <UserNav />
+          </div>
         </div>
       </aside>
 

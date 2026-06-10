@@ -2,6 +2,23 @@
 // IdeaForge 类型定义
 // ============================================
 
+// ── 用户系统 ────────────────────────────────
+
+export type UserRole = 'admin' | 'user'
+
+export interface User {
+  id: string
+  email: string
+  displayName: string
+  passwordHash: string
+  role: UserRole
+  createdAt: number
+  updatedAt: number
+}
+
+/** 对外暴露的安全用户对象（不含密码哈希） */
+export type SafeUser = Omit<User, 'passwordHash'>
+
 /**
  * 创意来源类型
  * 用字符串联合而非枚举，便于后续扩展新来源时只改注册表，不影响类型系统

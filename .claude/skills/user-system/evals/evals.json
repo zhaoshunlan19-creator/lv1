@@ -1,0 +1,110 @@
+{
+  "skill_name": "user-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我在用 Express + Prisma 做一个内部工具，目前没有任何登录功能。公司有 SSO，我想让所有人通过 SSO 登录，不用自己维护密码。client_id 是 internal-tool，SSO_ISSUER 是 https://account.youngala.com，redirect_uri 用 http://localhost:3000/auth/callback。帮我搭建完整的 SSO 登录系统。",
+      "expected_output": "生成完整的 SSO-only 用户系统骨架，包括：sso.ts 或 sso.js 模块（含 buildAuthorizeUrl、exchangeCodeForTokens、fetchUserInfo）、auth 路由（GET /auth/login、GET /auth/callback、POST /auth/logout、GET /api/me）、Prisma User 模型（含 ssoSubject 字段，无 passwordHash）、.env.example（含所有 SSO 变量）、session 中间件配置、safeReturnTo 函数。代码必须使用 /connect/authorize 而非 /oauth/authorize，使用 PKCE，state 一次性使用，不调用 /connect/logout。",
+      "assertions": [
+        {
+          "name": "uses-connect-authorize-not-oauth",
+          "description": "生成的代码使用 /connect/authorize 而非 /oauth/authorize"
+        },
+        {
+          "name": "pkce-s256",
+          "description": "PKCE 使用 SHA-256，code_challenge_method=S256"
+        },
+        {
+          "name": "state-one-time",
+          "description": "state 在验证后立即删除（delete req.session.sso 或等效）"
+        },
+        {
+          "name": "no-connect-logout",
+          "description": "代码中不出现 /connect/logout"
+        },
+        {
+          "name": "sso-subject-in-model",
+          "description": "Prisma schema 包含 ssoSubject 字段，且无 passwordHash 字段"
+        },
+        {
+          "name": "client-secret-server-only",
+          "description": "client_secret 只从环境变量读取，不硬编码"
+        },
+        {
+          "name": "env-example-generated",
+          "description": "生成了 .env.example 包含 SSO_ISSUER、SSO_CLIENT_ID、SSO_CLIENT_SECRET、SSO_REDIRECT_URI"
+        },
+        {
+          "name": "safe-return-to",
+          "description": "returnTo 有安全验证，只接受相对路径"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我为我的 Next.js 14 应用（App Router，TypeScript）搭建基础用户系统。用邮箱+密码注册登录，不需要 SSO。用 Prisma + PostgreSQL 存数据。",
+      "expected_output": "生成 Next.js App Router 的本地用户系统骨架，包括：iron-session 或等效 session 配置、Prisma User schema（含 email、passwordHash 字段）、Route Handlers（app/auth/register/route.ts、app/auth/login/route.ts、app/auth/logout/route.ts、app/api/me/route.ts）、bcrypt 密码哈希/验证工具函数、middleware.ts 保护路由、.env.example（DATABASE_URL、SESSION_SECRET）、验收清单。",
+      "assertions": [
+        {
+          "name": "bcrypt-used",
+          "description": "密码使用 bcrypt 哈希（不使用 md5、sha1 等不安全哈希）"
+        },
+        {
+          "name": "prisma-user-schema",
+          "description": "生成 Prisma User model 含 email（unique）和 passwordHash 字段"
+        },
+        {
+          "name": "nextjs-route-handlers",
+          "description": "使用 Next.js App Router Route Handler 格式（export async function POST/GET）"
+        },
+        {
+          "name": "session-httponly-cookie",
+          "description": "session cookie 设置了 httpOnly"
+        },
+        {
+          "name": "api-me-returns-401-when-unauth",
+          "description": "/api/me 未登录时返回 401"
+        },
+        {
+          "name": "password-not-returned-in-response",
+          "description": "passwordHash 不出现在任何 API 响应或 session 中"
+        },
+        {
+          "name": "env-example-generated",
+          "description": "生成 .env.example 含 DATABASE_URL 和 SESSION_SECRET"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我们已经有一套用户系统了，Express + Mongoose，用户可以用邮箱密码登录。现在公司要求所有员工还可以选择用 SSO 登录。要求：不改动现有的登录注册逻辑，SSO 登录成功后和原有 session 格式保持一致，如果 SSO 的邮箱在我们系统里已经有账号就自动关联。",
+      "expected_output": "仅追加 SSO 相关代码，不修改现有认证逻辑。生成：Mongoose User schema 追加 ssoSubject 字段（sparse unique index）、sso.js SSO 模块、新增 /auth/sso/login 和 /auth/sso/callback 路由（使用 /auth/sso/ 前缀避免冲突）、callback 中按 sub 查找用户再按 email 关联、.env.example 追加 SSO 变量。明确说明哪些是新增文件哪些是修改现有文件。",
+      "assertions": [
+        {
+          "name": "sso-prefix-to-avoid-collision",
+          "description": "SSO 路由使用 /auth/sso/ 前缀，不覆盖 /auth/login"
+        },
+        {
+          "name": "mongoose-sso-subject-sparse",
+          "description": "Mongoose schema 中 ssoSubject 设置了 sparse: true（允许 null 的唯一索引）"
+        },
+        {
+          "name": "email-fallback-link",
+          "description": "callback 逻辑先按 sub 查找，再按 email 关联已有账号"
+        },
+        {
+          "name": "no-existing-auth-modification",
+          "description": "输出中没有修改或替换已有 /auth/login 或 /auth/register 路由的指示"
+        },
+        {
+          "name": "pkce-s256",
+          "description": "PKCE 使用 SHA-256，code_challenge_method=S256"
+        },
+        {
+          "name": "state-one-time",
+          "description": "state 在验证后立即删除"
+        }
+      ]
+    }
+  ]
+}
