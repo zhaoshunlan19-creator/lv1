@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// JustOneAPI 地址：国内用户建议用 http://47.117.133.51:30015（更稳定）
 const JUSTONEAPI_BASE = 'https://api.justoneapi.com'
 
 export async function POST(req: NextRequest) {

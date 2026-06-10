@@ -106,6 +106,13 @@ async function callAPI(request: {
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('[AITOLL] API 请求失败:', {
+      status: response.status,
+      url: API_BASE_URL,
+      model: request.model,
+      authHeader: `Bearer ${apiKey.slice(0, 10)}...`,
+      error: errorText,
+    })
     throw new Error(`API 调用失败: ${response.status} ${errorText}`)
   }
 
