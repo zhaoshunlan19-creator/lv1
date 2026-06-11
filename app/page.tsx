@@ -1,12 +1,23 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight, LogOut, Shield, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { IdeaCard } from '@/components/idea-card'
 import { IdeaCardFocus } from '@/components/idea-card-focus'
 import type { Idea } from '@/lib/types'
+import type { SessionUser } from '@/lib/session'
 
 
 const GRADIENTS = [
@@ -24,10 +35,14 @@ function getIndex(title: string) {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'focus' | 'grid'>('focus')
   const [history, setHistory] = useState<string[]>([])
+  const [user, setUser] = useState<SessionUser | null>(null)
+  const [userLoading, setUserLoading] = useState(true)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -49,6 +64,22 @@ export default function Home() {
     }
     load()
   }, [])
+
+  // 获取当前登录用户信息
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setUser)
+      .finally(() => setUserLoading(false))
+  }, [])
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    await fetch('/api/auth/logout', { method: 'POST' })
+    setUser(null)
+    setLoggingOut(false)
+    router.refresh()
+  }
 
   const handleNext = useCallback(() => {
     setHistory((hist) => {
@@ -97,6 +128,62 @@ export default function Home() {
               >
                 {viewMode === 'focus' ? <LayoutGrid className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
+            )}
+
+            {/* 分隔线 */}
+            <div className="h-4 w-px bg-border mx-1" />
+
+            {/* 用户入口 */}
+            {userLoading ? (
+              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2 h-8 px-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {user.displayName?.[0]?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm hidden sm:inline">{user.displayName}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{user.displayName}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {user.role === 'admin' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          管理后台
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
+                    {loggingOut ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <LogOut className="h-4 w-4 mr-2" />
+                    )}
+                    退出登录
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild className="h-8">
+                  <Link href="/login">登录</Link>
+                </Button>
+                <Button variant="default" size="sm" asChild className="h-8">
+                  <Link href="/register">注册</Link>
+                </Button>
+              </>
             )}
           </div>
         </div>
