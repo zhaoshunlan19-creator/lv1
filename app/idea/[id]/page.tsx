@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { AnalysisSection } from '@/components/analysis-section'
 import { MVPSection } from '@/components/mvp-section'
 import type { Idea } from '@/lib/types'
+import type { SessionUser } from '@/lib/session'
 
 export default function IdeaDetailPage() {
   const params = useParams()
@@ -32,6 +33,9 @@ export default function IdeaDetailPage() {
   const [loading, setLoading] = useState(true)
   const [reAnalyzing, setReAnalyzing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [user, setUser] = useState<SessionUser | null>(null)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
 
   const fetchIdea = async () => {
     try {
@@ -52,6 +56,62 @@ export default function IdeaDetailPage() {
   useEffect(() => {
     fetchIdea()
   }, [id])
+
+  // 获取当前用户
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setUser)
+  }, [])
+
+  // 自动记录浏览历史
+  useEffect(() => {
+    if (id && user) {
+      fetch('/api/me/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ideaId: id }),
+      }).catch(() => {
+        // 静默失败
+      })
+    }
+  }, [id, user])
+
+  // 获取关注状态
+  useEffect(() => {
+    if (user && id) {
+      fetch('/api/me/follows')
+        .then((r) => (r.ok ? r.json() : []))
+        .then((ideas: Idea[]) => {
+          setIsFollowing(ideas.some((i) => i.id === id))
+        })
+        .catch(() => setIsFollowing(false))
+    }
+  }, [user, id])
+
+  const handleFollowToggle = async () => {
+    if (!user || !idea) return
+    setFollowLoading(true)
+    try {
+      if (isFollowing) {
+        const res = await fetch(`/api/me/follows?ideaId=${id}`, {
+          method: 'DELETE',
+        })
+        if (res.ok) setIsFollowing(false)
+      } else {
+        const res = await fetch('/api/me/follows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ideaId: id }),
+        })
+        if (res.ok) setIsFollowing(true)
+      }
+    } catch (error) {
+      console.error('关注操作失败:', error)
+    } finally {
+      setFollowLoading(false)
+    }
+  }
 
   const handleReanalyze = async () => {
     if (!idea) return
@@ -148,6 +208,24 @@ export default function IdeaDetailPage() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+                className="gap-1"
+              >
+                {followLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Heart
+                    className={`h-3.5 w-3.5 ${isFollowing ? 'fill-current' : ''}`}
+                  />
+                )}
+                {isFollowing ? '已关注' : '关注'}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

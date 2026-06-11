@@ -65,3 +65,20 @@ export async function deleteIdea(id: string): Promise<void> {
   const filtered = ideas.filter((i) => i.id !== id)
   await fs.writeFile(DATA_FILE, JSON.stringify(filtered, null, 2))
 }
+
+/**
+ * 获取指定用户的创意列表
+ */
+export async function getIdeasByUserId(userId: string): Promise<Idea[]> {
+  const ideas = await getAllIdeas()
+  return ideas.filter((i) => i.userId === userId)
+}
+
+/**
+ * 检查创意是否属于指定用户（或无创建者，即公共创意）
+ */
+export async function isIdeaOwner(id: string, userId: string): Promise<boolean> {
+  const idea = await getIdea(id)
+  if (!idea) return false
+  return !idea.userId || idea.userId === userId
+}

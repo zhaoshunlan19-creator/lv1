@@ -1,34 +1,54 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Lightbulb, Settings, ArrowLeft, Users } from 'lucide-react'
+import { Sparkles, Lightbulb, Settings, ArrowLeft, Users, Shield, User } from 'lucide-react'
 import { UserNav } from '@/components/auth/user-nav'
+import type { SessionUser } from '@/lib/session'
 
 const NAV_ITEMS = [
   {
     label: '创意管理',
     href: '/admin',
     icon: Lightbulb,
-    // exact match，避免 /admin/settings 也高亮
     exact: true,
+    adminOnly: true,
   },
   {
     label: '用户管理',
     href: '/admin/users',
     icon: Users,
     exact: false,
+    adminOnly: true,
+  },
+  {
+    label: '个人中心',
+    href: '/admin/profile',
+    icon: User,
+    exact: true,
+    adminOnly: false,
   },
   {
     label: '设置',
     href: '/admin/settings',
     icon: Settings,
     exact: false,
+    adminOnly: false,
   },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [user, setUser] = useState<SessionUser | null>(null)
+
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setUser)
+  }, [])
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin')
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -40,13 +60,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="rounded-lg bg-primary/10 p-1.5">
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-bold text-sm">管理后台</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm">{user?.role === 'admin' ? '管理后台' : '个人中心'}</span>
+              {user?.role === 'admin' && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  <Shield className="h-3 w-3" />管理员
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ label, href, icon: Icon, exact }) => {
+          {visibleNavItems.map(({ label, href, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
             return (
               <Link

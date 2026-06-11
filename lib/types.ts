@@ -77,6 +77,7 @@ export interface Idea {
   status: IdeaStatus
   createdAt: number
   updatedAt: number
+  userId?: string           // 创建者用户 ID（可选，兼容已有数据）
   analysis?: AnalysisResult
   mvpPlan?: MVPPlan
   source?: IdeaSource

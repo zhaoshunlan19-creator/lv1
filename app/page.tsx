@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight, LogOut, Shield, Loader2 } from 'lucide-react'
+import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight, LogOut, Shield, Loader2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -154,12 +154,22 @@ export default function Home() {
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  {user.role === 'admin' && (
+                  {user.role === 'admin' ? (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/admin" className="cursor-pointer flex items-center gap-2">
                           <Shield className="h-4 w-4" />
                           管理后台
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/profile" className="cursor-pointer flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          个人中心
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

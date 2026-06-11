@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllIdeas, saveIdea } from '@/lib/storage'
+import { getSession } from '@/lib/session'
 import type { Idea } from '@/lib/types'
 
-// GET /api/ideas — 获取所有创意
+// GET /api/ideas — 获取所有创意（公开，广场展示用）
 export async function GET() {
   try {
     const ideas = await getAllIdeas()
@@ -16,9 +17,19 @@ export async function GET() {
   }
 }
 
-// POST /api/ideas — 创建创意
+// POST /api/ideas — 创建创意（仅管理员）
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSession()
+
+    // 仅管理员可创建创意
+    if (!session.user || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: '无权创建创意' },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const { title, description, targetUser, source } = body
 
@@ -37,6 +48,7 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      userId: session.user.id,
       ...(source ? { source } : {}),
     }
 
