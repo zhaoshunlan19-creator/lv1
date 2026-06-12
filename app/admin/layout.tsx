@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Lightbulb, Settings, ArrowLeft, Users, Shield, User } from 'lucide-react'
+import { Sparkles, Lightbulb, Settings, ArrowLeft, Users, Shield } from 'lucide-react'
 import { UserNav } from '@/components/auth/user-nav'
 import type { SessionUser } from '@/lib/session'
 
@@ -23,18 +23,11 @@ const NAV_ITEMS = [
     adminOnly: true,
   },
   {
-    label: '个人中心',
-    href: '/admin/profile',
-    icon: User,
-    exact: true,
-    adminOnly: false,
-  },
-  {
     label: '设置',
     href: '/admin/settings',
     icon: Settings,
     exact: false,
-    adminOnly: false,
+    adminOnly: true,
   },
 ]
 
@@ -49,6 +42,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [])
 
   const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin')
+  const isProfilePage = pathname === '/admin/profile'
+
+  if (isProfilePage) {
+    return <div className="min-h-screen bg-background">{children}</div>
+  }
 
   return (
     <div className="flex min-h-screen bg-background">

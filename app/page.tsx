@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Sparkles, LayoutGrid, Maximize2, Lightbulb, BookOpen, ChevronRight, LogOut, Shield, Loader2, User } from 'lucide-react'
+import { Sparkles, LayoutGrid, Maximize2, Lightbulb, ChevronRight, LogOut, Shield, Loader2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -18,21 +17,6 @@ import { IdeaCard } from '@/components/idea-card'
 import { IdeaCardFocus } from '@/components/idea-card-focus'
 import type { Idea } from '@/lib/types'
 import type { SessionUser } from '@/lib/session'
-
-
-const GRADIENTS = [
-  'from-indigo-400 to-purple-500',
-  'from-rose-400 to-pink-500',
-  'from-amber-400 to-orange-500',
-  'from-teal-400 to-cyan-500',
-  'from-violet-400 to-fuchsia-500',
-  'from-emerald-400 to-green-500',
-]
-const EMOJIS = ['💡', '🚀', '🎯', '🔧', '🌱', '✨']
-
-function getIndex(title: string) {
-  return (title.charCodeAt(0) || 0) % 6
-}
 
 export default function Home() {
   const router = useRouter()
@@ -91,11 +75,6 @@ export default function Home() {
     })
   }, [ideas])
 
-  const handleHistoryClick = useCallback((id: string) => {
-    setHistory((hist) => [...hist.filter((h) => h !== id), id])
-    setViewMode('focus')
-  }, [])
-
   const handleGridCardClick = useCallback((id: string) => {
     setHistory((hist) => [...hist.filter((h) => h !== id), id])
     setViewMode('focus')
@@ -103,9 +82,6 @@ export default function Home() {
 
   const currentId = history[history.length - 1]
   const currentIdea = ideas.find((i) => i.id === currentId)
-  const historyIdeas = [...new Set([...history].reverse())]
-    .map((id) => ideas.find((i) => i.id === id))
-    .filter((i): i is Idea => !!i)
 
   return (
     <main className="min-h-screen bg-background">
@@ -154,27 +130,21 @@ export default function Home() {
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  {user.role === 'admin' ? (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin" className="cursor-pointer flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          管理后台
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  ) : (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/profile" className="cursor-pointer flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          个人中心
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/profile" className="cursor-pointer flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      个人中心
+                    </Link>
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        管理后台
+                      </Link>
+                    </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
                     {loggingOut ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -186,14 +156,9 @@ export default function Home() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
-                <Button variant="ghost" size="sm" asChild className="h-8">
-                  <Link href="/login">登录</Link>
-                </Button>
-                <Button variant="default" size="sm" asChild className="h-8">
-                  <Link href="/register">注册</Link>
-                </Button>
-              </>
+              <Button variant="ghost" size="sm" asChild className="h-8">
+                <Link href="/login">登录</Link>
+              </Button>
             )}
           </div>
         </div>
@@ -230,39 +195,6 @@ export default function Home() {
           <div className="space-y-4">
             <IdeaCardFocus idea={currentIdea} />
             <div className="flex items-center justify-center gap-3">
-              {historyIdeas.length > 0 && (
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="default" className="gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      浏览历史
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-80 overflow-y-auto">
-                    <SheetHeader className="mb-4">
-                      <SheetTitle>浏览历史</SheetTitle>
-                    </SheetHeader>
-                    <div className="space-y-3">
-                      {historyIdeas.map((idea, i) => {
-                        const idx = getIndex(idea.title)
-                        return (
-                          <button
-                            key={`${idea.id}-${i}`}
-                            onClick={() => handleHistoryClick(idea.id)}
-                            className="w-full text-left rounded-lg border bg-card overflow-hidden hover:border-primary/30 hover:shadow-sm transition-all"
-                          >
-                            <div className={`bg-gradient-to-br ${GRADIENTS[idx]} h-8 flex items-center px-3 gap-2`}>
-                              <span className="text-sm">{EMOJIS[idx]}</span>
-                              <span className="text-xs text-white/90 font-medium truncate">{idea.title}</span>
-                            </div>
-                            <p className="px-3 py-2 text-xs text-muted-foreground line-clamp-2">{idea.description}</p>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
               <Button size="default" onClick={handleNext} className="gap-2 px-8">
                 探索下一个
                 <ChevronRight className="h-4 w-4" />
