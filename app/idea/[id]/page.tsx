@@ -17,6 +17,8 @@ import {
   Heart,
   MessageCircle,
   Share2,
+  BookOpen,
+  Bookmark,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AnalysisSection } from '@/components/analysis-section'
@@ -321,19 +323,19 @@ export default function IdeaDetailPage() {
                     <div className="flex items-center gap-3 pt-1">
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <PlayCircle className="h-3 w-3" />
-                        {idea.source.stats.playCount.toLocaleString()}
+                        {(idea.source.stats.playCount ?? 0).toLocaleString()}
                       </span>
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Heart className="h-3 w-3" />
-                        {idea.source.stats.likeCount.toLocaleString()}
+                        {(idea.source.stats.likeCount ?? 0).toLocaleString()}
                       </span>
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <MessageCircle className="h-3 w-3" />
-                        {idea.source.stats.commentCount.toLocaleString()}
+                        {(idea.source.stats.commentCount ?? 0).toLocaleString()}
                       </span>
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Share2 className="h-3 w-3" />
-                        {idea.source.stats.shareCount.toLocaleString()}
+                        {(idea.source.stats.shareCount ?? 0).toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -345,6 +347,63 @@ export default function IdeaDetailPage() {
                       className="inline-block text-xs text-primary hover:underline pt-1"
                     >
                       查看原视频 →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Xiaohongshu Source */}
+          {idea.source?.type === 'xiaohongshu' && (
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <h3 className="font-medium text-sm">创意来源 · 小红书笔记</h3>
+              </div>
+              <div className="flex gap-3">
+                {idea.source.coverImage && (
+                  <img
+                    src={idea.source.coverImage}
+                    alt="笔记封面"
+                    className="w-16 h-20 object-cover rounded-lg shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  {idea.source.authorName && (
+                    <p className="text-xs text-muted-foreground">@{idea.source.authorName}</p>
+                  )}
+                  <p className="text-sm leading-relaxed line-clamp-3">
+                    {idea.source.noteTitle}
+                  </p>
+                  {idea.source.stats && (
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Heart className="h-3 w-3" />
+                        {(idea.source.stats.likeCount ?? 0).toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Bookmark className="h-3 w-3" />
+                        {(idea.source.stats.collectCount ?? 0).toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MessageCircle className="h-3 w-3" />
+                        {(idea.source.stats.commentCount ?? 0).toLocaleString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Share2 className="h-3 w-3" />
+                        {(idea.source.stats.shareCount ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {idea.source.shareUrl && (
+                    <a
+                      href={idea.source.shareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs text-primary hover:underline pt-1"
+                    >
+                      查看原笔记 →
                     </a>
                   )}
                 </div>

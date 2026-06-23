@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Music2, Loader2, ArrowRight, Sparkles,
   Brain, Rocket, FileText, RefreshCw, Users,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +25,8 @@ import type { Idea, AnalysisResult, MVPPlan, IdeaSource } from '@/lib/types'
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type DocPhase = 'idle' | 'submitting' | 'analyzing' | 'complete' | 'saving' | 're-analyzing'
-type DouyinStage = 'input' | 'extracting' | 'generating'
+type ExtractStage = 'input' | 'extracting' | 'generating'
+type ImportType = 'douyin' | 'xiaohongshu'
 type ActiveField = 'title' | 'description' | 'targetUser' | null
 
 interface IdeaSheetProps {
@@ -86,10 +88,10 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
   // Source
   const [source, setSource] = useState<IdeaSource | null>(null)
 
-  // Douyin popover
-  const [douyinPopoverOpen, setDouyinPopoverOpen] = useState(false)
-  const [douyinUrl, setDouyinUrl] = useState('')
-  const [douyinStage, setDouyinStage] = useState<DouyinStage>('input')
+  // Import popover (shared for Douyin / Xiaohongshu)
+  const [importType, setImportType] = useState<ImportType | null>(null)
+  const [importUrl, setImportUrl] = useState('')
+  const [importStage, setImportStage] = useState<ExtractStage>('input')
 
   const [error, setError] = useState('')
 
@@ -124,9 +126,9 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
       setMvpResult(null)
       setIdeaId(null)
       setSource(null)
-      setDouyinPopoverOpen(false)
-      setDouyinUrl('')
-      setDouyinStage('input')
+      setImportType(null)
+      setImportUrl('')
+      setImportStage('input')
       setError('')
       setActiveField(null)
     }
@@ -135,7 +137,7 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
   // ── Derived ─────────────────────────────────────────────────────────────────
 
   const anyBusy = ['submitting', 'analyzing', 'saving', 're-analyzing'].includes(docPhase)
-  const douyinLoading = douyinStage === 'extracting' || douyinStage === 'generating'
+  const importLoading = importStage === 'extracting' || importStage === 'generating'
   const fieldsReadOnly = mode === 'create' && docPhase === 'complete'
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -189,21 +191,25 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
     }
   }
 
-  const handleDouyinExtract = async () => {
-    if (!douyinUrl.trim()) { setError('请输入抖音视频链接'); return }
+  const handleExtract = async () => {
+    if (!importType) return
+    if (!importUrl.trim()) {
+      setError(importType === 'douyin' ? '请输入抖音视频链接' : '请输入小红书笔记链接')
+      return
+    }
     setError('')
-    setDouyinStage('extracting')
+    setImportStage('extracting')
     try {
-      const extractRes = await fetch('/api/douyin/extract', {
+      const extractRes = await fetch(`/api/${importType}/extract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: douyinUrl }),
+        body: JSON.stringify({ url: importUrl }),
       })
       const extractData = await extractRes.json()
       if (!extractRes.ok) throw new Error(extractData.error || '提取失败')
 
-      setDouyinStage('generating')
-      const draftRes = await fetch('/api/douyin/draft', {
+      setImportStage('generating')
+      const draftRes = await fetch(`/api/${importType}/draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: extractData.title, description: extractData.description }),
@@ -211,24 +217,40 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
       const draftData = await draftRes.json()
       if (!draftRes.ok) throw new Error(draftData.error || 'AI 生成草稿失败')
 
-      // Fill document fields and close the Douyin popover
+      // Fill document fields and close the import popover
       setTitle(draftData.title || extractData.title || '')
       setDescription(draftData.description || '')
       setTargetUser(draftData.targetUser || '')
-      setSource({
-        type: 'douyin',
-        videoId: extractData.videoId,
-        shareUrl: extractData.shareUrl,
-        videoTitle: extractData.title,
-        coverImage: extractData.coverImage,
-        authorName: extractData.authorName,
-        stats: extractData.stats,
-      })
-      setDouyinPopoverOpen(false)
-      setDouyinStage('input')
+
+      if (importType === 'douyin') {
+        setSource({
+          type: 'douyin',
+          videoId: extractData.videoId,
+          shareUrl: extractData.shareUrl,
+          videoTitle: extractData.title,
+          coverImage: extractData.coverImage,
+          authorName: extractData.authorName,
+          stats: extractData.stats,
+        })
+      } else {
+        setSource({
+          type: 'xiaohongshu',
+          noteId: extractData.noteId,
+          shareUrl: extractData.shareUrl,
+          noteTitle: extractData.title,
+          coverImage: extractData.coverImage,
+          authorName: extractData.authorName,
+          authorId: extractData.authorId,
+          stats: extractData.stats,
+        })
+      }
+
+      setImportType(null)
+      setImportUrl('')
+      setImportStage('input')
     } catch (err) {
       setError(err instanceof Error ? err.message : '发生未知错误')
-      setDouyinStage('input')
+      setImportStage('input')
     }
   }
 
@@ -267,10 +289,72 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
     }
   }
 
+  // ── Import trigger renderer ─────────────────────────────────────────────────
+
+  const renderImportTrigger = (type: ImportType, icon: React.ReactNode, label: string) => (
+    <Popover
+      open={importType === type}
+      onOpenChange={(v) => {
+        if (!importLoading) {
+          if (v) {
+            setImportType(type)
+            setImportUrl('')
+            setImportStage('input')
+          } else {
+            setImportType(null)
+            setImportUrl('')
+            setImportStage('input')
+          }
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          {icon}
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-4 space-y-3">
+        {importLoading ? (
+          <div className="py-4 text-center space-y-2">
+            <Loader2 className="h-4 w-4 animate-spin mx-auto text-primary" />
+            <p className="text-xs text-muted-foreground">
+              {importStage === 'extracting'
+                ? type === 'douyin' ? '正在提取视频信息...' : '正在提取笔记信息...'
+                : 'AI 正在生成草稿...'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {type === 'douyin'
+                ? '粘贴抖音分享文字或链接，AI 自动提取并预填字段'
+                : '粘贴小红书分享文字或链接，AI 自动提取并预填字段'}
+            </p>
+            <Textarea
+              placeholder={type === 'douyin'
+                ? "例如：\n2.00 复制打开抖音，看看【...】 https://v.douyin.com/xxx/"
+                : "例如：\n99 生活达人发布了一篇小红书笔记，快来看吧！ 😆 ... http://xhslink.com/xxx/，复制本条信息，打开【小红书】App查看精彩内容！"}
+              rows={3}
+              value={importUrl}
+              onChange={(e) => setImportUrl(e.target.value)}
+              className="text-sm resize-none"
+              autoFocus
+            />
+            <Button size="sm" className="w-full gap-1.5" onClick={handleExtract}>
+              <ArrowRight className="h-3.5 w-3.5" />
+              提取并预填
+            </Button>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!anyBusy && !douyinLoading) onOpenChange(v) }}>
+    <Sheet open={open} onOpenChange={(v) => { if (!anyBusy && !importLoading) onOpenChange(v) }}>
       <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
 
         {/* Header */}
@@ -298,59 +382,19 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
           {/* Section: 基本信息 — Notion-style inline editing */}
           <section className="space-y-1">
 
-            {/* Douyin import trigger — floats top-right, only in create+idle */}
+            {/* Import triggers — floats top-right, only in create+idle */}
             {mode === 'create' && docPhase === 'idle' && (
-              <div className="flex justify-end mb-1">
-                <Popover
-                  open={douyinPopoverOpen}
-                  onOpenChange={(v) => {
-                    if (!douyinLoading) {
-                      setDouyinPopoverOpen(v)
-                      if (!v) { setDouyinUrl(''); setDouyinStage('input') }
-                    }
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <Music2 className="h-3.5 w-3.5" />
-                      从抖音导入
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-80 p-4 space-y-3">
-                    {douyinLoading ? (
-                      <div className="py-4 text-center space-y-2">
-                        <Loader2 className="h-4 w-4 animate-spin mx-auto text-primary" />
-                        <p className="text-xs text-muted-foreground">
-                          {douyinStage === 'extracting' ? '正在提取视频信息...' : 'AI 正在生成草稿...'}
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-xs text-muted-foreground">粘贴抖音分享文字或链接，AI 自动提取并预填字段</p>
-                        <Textarea
-                          placeholder={"例如：\n2.00 复制打开抖音，看看【...】 https://v.douyin.com/xxx/"}
-                          rows={3}
-                          value={douyinUrl}
-                          onChange={(e) => setDouyinUrl(e.target.value)}
-                          className="text-sm resize-none"
-                          autoFocus
-                        />
-                        <Button size="sm" className="w-full gap-1.5" onClick={handleDouyinExtract}>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                          提取并预填
-                        </Button>
-                      </>
-                    )}
-                  </PopoverContent>
-                </Popover>
+              <div className="flex justify-end gap-3 mb-1">
+                {renderImportTrigger('douyin', <Music2 className="h-3.5 w-3.5" />, '从抖音导入')}
+                {renderImportTrigger('xiaohongshu', <BookOpen className="h-3.5 w-3.5" />, '从小红书导入')}
               </div>
             )}
 
-            {/* Douyin draft hint */}
-            {mode === 'create' && source?.type === 'douyin' && docPhase === 'idle' && (
+            {/* Import draft hint */}
+            {mode === 'create' && (source?.type === 'douyin' || source?.type === 'xiaohongshu') && docPhase === 'idle' && (
               <div className="mb-3 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
                 <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                AI 已根据视频内容预填字段，可直接编辑后提交
+                AI 已根据{source?.type === 'douyin' ? '视频' : '笔记'}内容预填字段，可直接编辑后提交
               </div>
             )}
 
@@ -498,7 +542,7 @@ export function IdeaSheet({ mode, open, onOpenChange, idea, onSuccess }: IdeaShe
             ) : (
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
-                <Button onClick={handleSubmit} disabled={douyinLoading} className="gap-1.5">
+                <Button onClick={handleSubmit} disabled={importLoading} className="gap-1.5">
                   <Sparkles className="h-4 w-4" />
                   创建并分析
                 </Button>

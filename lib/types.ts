@@ -23,7 +23,7 @@ export type SafeUser = Omit<User, 'passwordHash'>
  * 创意来源类型
  * 用字符串联合而非枚举，便于后续扩展新来源时只改注册表，不影响类型系统
  */
-export type IdeaSourceType = 'manual' | 'douyin' | (string & {})
+export type IdeaSourceType = 'manual' | 'douyin' | 'xiaohongshu' | (string & {})
 
 export interface IdeaSource {
   type: IdeaSourceType
@@ -31,13 +31,19 @@ export interface IdeaSource {
   videoId?: string
   shareUrl?: string
   videoTitle?: string
+  // 小红书专用字段
+  noteId?: string
+  noteTitle?: string
+  // 通用字段
   coverImage?: string
   authorName?: string
+  authorId?: string
   stats?: {
-    playCount: number
-    likeCount: number
-    commentCount: number
-    shareCount: number
+    playCount?: number
+    likeCount?: number
+    commentCount?: number
+    shareCount?: number
+    collectCount?: number
   }
 }
 
@@ -47,6 +53,7 @@ export interface IdeaSource {
 export const SOURCE_REGISTRY: Record<string, { label: string; color: string }> = {
   manual:  { label: '手动录入', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' },
   douyin:  { label: '抖音',     color: 'bg-pink-100 text-pink-600 dark:bg-pink-950 dark:text-pink-300' },
+  xiaohongshu: { label: '小红书', color: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300' },
 }
 
 /** 未注册来源的兜底样式 */

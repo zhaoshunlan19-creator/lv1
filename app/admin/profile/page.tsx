@@ -11,11 +11,19 @@ import {
   BookmarkX,
   Sparkles,
   ArrowLeft,
+  User,
+  Lock,
+  Save,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { SourceBadge } from '@/components/source-badge'
 import type { Idea } from '@/lib/types'
+import type { SessionUser } from '@/lib/session'
 
 interface HistoryItem {
   ideaId: string
@@ -33,6 +41,11 @@ const PROFILE_NAV_ITEMS = [
     label: '浏览历史',
     value: 'history',
     icon: Clock,
+  },
+  {
+    label: '账号设置',
+    value: 'settings',
+    icon: User,
   },
 ]
 
@@ -62,6 +75,15 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
   const [unfollowingId, setUnfollowingId] = useState<string | null>(null)
+
+  // 账号设置相关
+  const [user, setUser] = useState<SessionUser | null>(null)
+  const [displayName, setDisplayName] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSaveResult, setProfileSaveResult] = useState<'ok' | 'error' | null>(null)
+  const [profileError, setProfileError] = useState('')
 
   const fetchFollows = useCallback(async () => {
     setFollowsLoading(true)
@@ -96,6 +118,15 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchFollows()
     fetchHistory()
+    // 获取用户信息
+    fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u) => {
+        if (u) {
+          setUser(u)
+          setDisplayName(u.displayName || '')
+        }
+      })
   }, [fetchFollows, fetchHistory])
 
   const handleUnfollow = async (ideaId: string) => {
@@ -113,6 +144,65 @@ export default function ProfilePage() {
       setUnfollowingId(null)
     }
   }
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true)
+    setProfileSaveResult(null)
+    setProfileError('')
+
+    if (newPassword && newPassword !== confirmPassword) {
+      setProfileError('两次输入的密码不一致')
+      setProfileSaving(false)
+      return
+    }
+
+    if (newPassword && newPassword.length < 8) {
+      setProfileError('密码至少 8 位')
+      setProfileSaving(false)
+      return
+    }
+
+    try {
+      const body: { displayName?: string; password?: string } = {}
+      if (displayName.trim() && displayName.trim() !== user?.displayName) {
+        body.displayName = displayName.trim()
+      }
+      if (newPassword) {
+        body.password = newPassword
+      }
+
+      if (!body.displayName && !body.password) {
+        setProfileError('没有需要保存的更改')
+        setProfileSaving(false)
+        return
+      }
+
+      const res = await fetch('/api/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) throw new Error()
+
+      setProfileSaveResult('ok')
+      setNewPassword('')
+      setConfirmPassword('')
+      // 刷新用户信息
+      const updatedUser = await fetch('/api/me').then((r) => r.json())
+      setUser(updatedUser)
+      setDisplayName(updatedUser.displayName || '')
+    } catch {
+      setProfileSaveResult('error')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const hasProfileChange =
+    displayName.trim() !== (user?.displayName || '') ||
+    newPassword !== '' ||
+    confirmPassword !== ''
 
   const renderIdeaCard = (idea: Idea, extra?: React.ReactNode) => (
     <div
@@ -184,7 +274,7 @@ export default function ProfilePage() {
       <section className="flex-1 min-w-0 overflow-y-auto">
         <div className="p-6 max-w-3xl">
           <h1 className="text-xl font-bold mb-6">
-            {activeTab === 'follows' ? '我的关注' : '浏览历史'}
+            {activeTab === 'follows' ? '我的关注' : activeTab === 'history' ? '浏览历史' : '账号设置'}
           </h1>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -279,6 +369,98 @@ export default function ProfilePage() {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            {/* ── 账号设置 ── */}
+            <TabsContent value="settings" className="space-y-6 mt-0">
+              <div className="rounded-xl border bg-card p-6 space-y-6">
+                <div>
+                  <h2 className="font-semibold text-base flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    个人资料
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    修改你的显示名称或密码
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">邮箱</Label>
+                    <Input id="email" value={user?.email || ''} disabled className="bg-muted" />
+                    <p className="text-xs text-muted-foreground">邮箱不可修改</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName">显示名称</Label>
+                    <Input
+                      id="displayName"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="你的显示名称"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">新密码</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="留空则不修改"
+                      />
+                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">密码至少 8 位，留空则不修改</p>
+                  </div>
+
+                  {newPassword && (
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">确认密码</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="再次输入新密码"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="text-sm">
+                    {profileSaveResult === 'ok' && (
+                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                        保存成功
+                      </span>
+                    )}
+                    {profileSaveResult === 'error' && (
+                      <span className="flex items-center gap-1.5 text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        保存失败，请重试
+                      </span>
+                    )}
+                    {profileError && (
+                      <span className="flex items-center gap-1.5 text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {profileError}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={profileSaving || !hasProfileChange}
+                    className="gap-1.5"
+                  >
+                    {profileSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    保存资料
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

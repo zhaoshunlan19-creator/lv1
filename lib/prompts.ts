@@ -88,9 +88,34 @@ export function buildDouyinIdeaPrompt(meta: DouyinVideoMeta): string {
 }`
 }
 
+export interface XiaohongshuNoteMeta {
+  title: string
+  description: string
+}
+
 /**
- * 从 AI 响应中提取 JSON
+ * 从小红书笔记内容生成创意草稿
  */
+export function buildXiaohongshuIdeaPrompt(meta: XiaohongshuNoteMeta): string {
+  return `你是一位产品经理助手。根据以下小红书笔记信息，提炼出一个产品创意草稿。
+
+## 笔记信息
+
+标题：${meta.title}
+正文：${meta.description || '（无正文）'}
+
+## 要求
+
+从笔记内容中挖掘潜在的产品机会或用户需求，生成一个简洁的创意草稿。
+
+必须严格按以下 JSON 格式输出，不要包含 markdown 代码块标记，直接输出 JSON：
+
+{
+  "title": "简洁的创意名称（10字以内）",
+  "description": "具体描述这个创意想做什么、解决什么问题（50-100字）",
+  "targetUser": "目标用户群体和他们的核心痛点（20-40字）"
+}`
+}
 export function extractJson(text: string): Record<string, unknown> {
   // 尝试匹配 ```json ... ``` 格式
   const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
